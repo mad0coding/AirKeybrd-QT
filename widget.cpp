@@ -3,12 +3,44 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 
-
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    
+    
+    trayIcon = new QSystemTrayIcon(this); // 托盘图标
+    trayMenu = new QMenu(this); // 托盘菜单
+    
+    showAction = new QAction("Show", this); // 托盘菜单按钮
+    quitAction = new QAction("Quit", this);
+    
+    trayMenu->addAction(showAction); // 按钮加入托盘菜单
+    trayMenu->addSeparator(); // 加分隔线
+    trayMenu->addAction(quitAction);
+    
+    qApp->setWindowIcon(QIcon(":/AirButton.ico")); // 测试代码!!!
+//    trayIcon->setIcon(qApp->windowIcon());
+    trayIcon->setIcon(QIcon(":/AirButton.ico")); // 必须加入图标
+    trayIcon->setToolTip("Keyboard-COM"); // 鼠标悬停图标时显示文本
+
+    trayIcon->setContextMenu(trayMenu); // 托盘菜单设置到托盘图标
+    trayIcon->show();
+
+    // 托盘菜单按钮信号槽
+    connect(showAction, &QAction::triggered, this, &QWidget::showNormal);
+    connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+
+    // 双击托盘图标也能恢复窗口
+    connect(trayIcon, &QSystemTrayIcon::activated, this, [=](QSystemTrayIcon::ActivationReason reason){
+        if (reason == QSystemTrayIcon::DoubleClick) {
+            this->showNormal();
+            this->raise();
+            this->activateWindow();
+        }
+    });
+    
     
     serialPort = new QSerialPort(this); // 创建串口设备
     connect(serialPort, SIGNAL(readyRead()), this, SLOT(on_serialReceive())); // 连接串口接收信号
@@ -31,6 +63,16 @@ Widget::Widget(QWidget *parent) :
 Widget::~Widget()
 {
     delete ui;
+}
+
+void Widget::closeEvent(QCloseEvent *event)
+{
+    if (trayIcon->isVisible()) {
+        trayIcon->show();
+        event->ignore(); // 阻止真正退出
+        hide(); // 隐藏窗口
+//        trayIcon->showMessage("提示", "程序已最小化到托盘");
+    }
 }
 
 void Widget::keyHandle(uint8_t keyValue, bool ifPress) // 按键处理

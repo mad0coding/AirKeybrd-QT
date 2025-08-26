@@ -39,3 +39,15 @@ FORMS += \
 
 #CONFIG += console
 
+
+RC_ICONS = AirButton.ico
+
+RESOURCES += \
+    res.qrc
+
+
+
+
+
+
+

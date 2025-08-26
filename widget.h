@@ -4,6 +4,9 @@
 #include <QWidget>
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QAction>
 #include "windows.h"
 #include "tools.h"
 
@@ -28,6 +31,15 @@ public:
     
     short keyNum;
     uint8_t func = 0;//, oldKV = 0;
+    
+private:
+    QSystemTrayIcon *trayIcon;
+    QMenu *trayMenu;
+    QAction *showAction;
+    QAction *quitAction;
+    
+protected:
+    void closeEvent(QCloseEvent *event) override; // 关闭事件
     
 private slots:
     void keyHandle(uint8_t keyValue, bool ifPress); // 按键处理

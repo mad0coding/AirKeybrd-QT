@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>AirButton.ico</file>
+    </qresource>
+</RCC>
