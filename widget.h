@@ -22,7 +22,7 @@ public:
     QStringList serialNamePort; // 串口列表
     QSerialPort *serialPort; // 串口设备
     
-    uint8_t keyArray[256]; // 按键记录
+    uint8_t keyArray[256], keyArrayAir[256]; // 按键记录
     uint8_t keyReport[8]; // 键盘报文
     
     short keyNum;

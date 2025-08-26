@@ -194,6 +194,77 @@ QString USB_to_str(uint8_t key, bool shift)//USB键值转按键名
     }
 }
 
+WORD USB_to_wVK(uint8_t usbKV) // USB键值转Windows虚拟键盘键值
+{
+    if(usbKV >= 4 && usbKV <= 29) return usbKV - 4 + 'A'; // A~Z
+    else if(usbKV >= 30 && usbKV <= 38) return usbKV - 30 + '1'; // 1~9
+    else if(usbKV == 39) return '0'; // 0
+    else if(usbKV >= 58 && usbKV <= 69) return usbKV - 58 + VK_F1; // F1~F12
+    else if(usbKV >= 89 && usbKV <= 97) return usbKV - 89 + VK_NUMPAD1; // NUM1~NUM9
+    else if(usbKV == 98) return VK_NUMPAD0; // NUM0
+    switch (usbKV) {
+        case 0:return 0;
+        case 40:return VK_RETURN; // Return
+        case 41:return VK_ESCAPE;
+        case 42:return VK_BACK;
+        case 43:return VK_TAB;
+        case 44:return VK_SPACE;
+        case 45:return VK_OEM_MINUS;
+        case 46:return VK_OEM_PLUS;
+        case 47:return VK_OEM_4;
+        case 48:return VK_OEM_6;
+        case 49:return VK_OEM_5;
+//        case 50:return shift ? "[**|]" : "[**\\]";
+        case 51:return VK_OEM_1;
+        case 52:return VK_OEM_7;
+        case 53:return VK_OEM_3;
+        case 54:return VK_OEM_COMMA;
+        case 55:return VK_OEM_PERIOD;
+        case 56:return VK_OEM_2;
+        case 57:return VK_CAPITAL;
+        case 70:return VK_SNAPSHOT;
+        case 71:return VK_SCROLL;
+        case 72:return VK_PAUSE;
+        case 73:return VK_INSERT;
+        case 74:return VK_HOME;
+        case 75:return VK_PRIOR;
+        case 76:return VK_DELETE;
+        case 77:return VK_END;
+        case 78:return VK_NEXT;
+        case 79:return VK_RIGHT;
+        case 80:return VK_LEFT;
+        case 81:return VK_DOWN;
+        case 82:return VK_UP;
+        case 83:return VK_NUMLOCK;
+        case 84:return VK_DIVIDE;
+        case 85:return VK_MULTIPLY;
+        case 86:return VK_SUBTRACT;
+        case 87:return VK_ADD;
+        case 88:return VK_RETURN; // Enter 临时代码
+        case 99:return VK_DECIMAL;
+//        case 100:return "[Non-US\and|]";
+//        case 101:return "[Application]";
+//        case 102:return "[Power]";
+//        case 103:return "[NUM =]";
+//        case kv_wheel_up:return "[滚轮向上]";
+//        case kv_wheel_down:return "[滚轮向下]";
+        case kv_vol_up:return VK_VOLUME_UP;
+        case kv_vol_down:return VK_VOLUME_DOWN;
+        case kv_vol_mute:return VK_VOLUME_MUTE;
+        case kv_vol_stop:return VK_MEDIA_STOP;
+        case kv_vol_next:return VK_MEDIA_NEXT_TRACK;
+        case kv_vol_prev:return VK_MEDIA_PREV_TRACK;
+        case kv_mouse_l:return VK_LBUTTON;
+        case kv_mouse_m:return VK_MBUTTON;
+        case kv_mouse_r:return VK_RBUTTON;
+        case kv_ctrl:return VK_LCONTROL;
+        case kv_shift:return VK_LSHIFT;
+        case kv_alt:return VK_LMENU;
+        case kv_win:return VK_LWIN;
+        default:return 0;
+    }
+}
+
 uint8_t key_to_report(uint8_t *report, uint8_t *keyArray) // 按键数值转键盘报文
 {
     memset(report, 0, 8); // 清空报文
@@ -213,36 +284,24 @@ uint8_t key_to_report(uint8_t *report, uint8_t *keyArray) // 按键数值转键�
     return 0;
 }
 
-//H:0~colorAngle*6,S:0~255(用delta代替),V:0~255
-void rgbToHsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){
-    uint8_t max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
-    uint8_t delta = max - min;
-    if(delta == 0) *pH = 0;
-    else if(max == vR) *pH = colorAngle*(vG-vB)/delta;
-    else if(max == vG) *pH = colorAngle*(vB-vR)/delta + colorAngle*2;
-    else if(max == vB) *pH = colorAngle*(vR-vG)/delta + colorAngle*4;
-    if(*pH > colorAngle*6) *pH += colorAngle*6;
-    if(max == 0) *pS = 0;
-    else *pS = delta;//100 * delta / max
-    *pV = max;
-}
-void hsvToRgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){
-    uint8_t hi = (uint16_t)(vH / colorAngle) % 6;
-    uint16_t f = vH - hi * colorAngle;
-    uint8_t p = vV - vS;
-    uint8_t q = vV - vS * f / colorAngle;
-    uint8_t t = vV - vS * (colorAngle - f) / colorAngle;
-    if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
-    else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
-    else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}
-    else if(hi == 3){*pR = p;    *pG = q;    *pB = vV;}
-    else if(hi == 4){*pR = t;    *pG = p;    *pB = vV;}
-    else if(hi == 5){*pR = vV;   *pG = p;    *pB = q;}
+void SendInputKey(uint8_t usbKV, bool down) // 按USB键值发送虚拟按键
+{
+    WORD vk = USB_to_wVK(usbKV);
+    INPUT input[1] = {};
+    input[0].type = INPUT_KEYBOARD;
+    input[0].ki.wVk = vk;
+    input[0].ki.dwFlags = down ? 0 : KEYEVENTF_KEYUP; // 0 表示按下
+    
+    SendInput(sizeof(input) / sizeof(INPUT), input, sizeof(INPUT)); // 向系统发送
 }
 
 uint16_t endianConvert16(uint16_t num){//16位大小端转换
     return (num << 8) | (num >> 8);//交换两个字节
 }
+
+
+
+
 
 
 

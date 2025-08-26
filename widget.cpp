@@ -154,12 +154,21 @@ void Widget::on_bt_comClose_clicked() // 串口关闭
     serialPort->close();
     ui->bt_comOpen->setStyleSheet("color: black");
     searchPort();
+    
+//    static int tmp = 0; // 测试代码!!!
+//    if(!tmp) SendInputKey(kv_ctrl, true);
+//    else SendInputKey(kv_ctrl, false);
+//    tmp = !tmp;
 }
 
 void Widget::on_serialReceive() // 串口接收数据
 {
     QString buf;
     buf = QString(serialPort->readAll()); // 暂不做任何处理
+    
+    if(ui->cbox_mode->currentIndex() == 2){ // 输入模式
+        
+    }
 }
 
 void Widget::searchPort() // 搜索可用串口
@@ -179,7 +188,7 @@ void Widget::SendKeyReport(uint8_t *report) // 发送键盘报文
     for(int i = 0; i < 8; i++) txBuf.append(report[i]);
     txBuf.append(0xFE); // 帧尾
     
-    if(!ui->cB_Output->isChecked()) return; // 不输出直接返回
+    if(!ui->cbox_mode->currentIndex() != 1) return; // 不输出直接返回
     
     if(1){ // COM
         if(serialPort->isOpen()) serialPort->write(txBuf);

@@ -1,6 +1,8 @@
 #ifndef TOOLS_H
 #define TOOLS_H
 
+#include <Windows.h>
+
 //#include "widget.h"
 #include <QCoreApplication>
 #include <QTime>
@@ -47,11 +49,11 @@ void mySleep(int ms);//毫秒延时
 
 uint8_t key_to_USB(int key, int Vkey);//QT键值转USB键值
 QString USB_to_str(uint8_t key, bool shift);//USB键值转按键名
+WORD USB_to_wVK(uint8_t usbKV); // USB键值转Windows虚拟键盘键值
 
 uint8_t key_to_report(uint8_t *report, uint8_t *keyArray); // 按键数值转键盘报文
 
-void rgbToHsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);
-void hsvToRgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB);
+void SendInputKey(uint8_t usbKV, bool down); // 按USB键值发送虚拟按键
 
 uint16_t endianConvert16(uint16_t num);//16位大小端转换
 

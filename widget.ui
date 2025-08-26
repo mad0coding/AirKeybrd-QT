@@ -19,7 +19,10 @@
   <property name="windowTitle">
    <string>Widget</string>
   </property>
-  <widget class="QCheckBox" name="cB_Output">
+  <widget class="QCheckBox" name="cB_Output_00">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -35,7 +38,7 @@
     <string>Output</string>
    </property>
    <property name="checked">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="QCheckBox" name="cB_KeepOnTop">
@@ -387,6 +390,34 @@
    <property name="checked">
     <bool>false</bool>
    </property>
+  </widget>
+  <widget class="QComboBox" name="cbox_mode">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>150</y>
+     <width>90</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="focusPolicy">
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <item>
+    <property name="text">
+     <string>None</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Output</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Input</string>
+    </property>
+   </item>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
