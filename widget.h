@@ -22,7 +22,8 @@ public:
     QStringList serialNamePort; // 串口列表
     QSerialPort *serialPort; // 串口设备
     
-    uint8_t keyArray[256], keyArrayAir[256]; // 按键记录
+    uint8_t *keyState = NULL, keyStateLen = 16;
+    uint8_t keyArray[256], keyArrayAir[256], keyArrayAirOld[256]; // 按键记录
     uint8_t keyReport[8]; // 键盘报文
     
     short keyNum;
@@ -40,8 +41,11 @@ private slots:
     void searchPort(); // 搜索可用串口
     
     void SendKeyReport(uint8_t *report); // 发送键盘报文
+    void SendKeyState(void); // 向系统发送按键状态
     
+    void ComUnpack(uint8_t *buf, int len); // 串口解包
     
+    void KeyUnpack(uint8_t *buf, int len); // 按键解包
     
     void on_cB_KeepOnTop_stateChanged(int arg1); // 保持最前
     

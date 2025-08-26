@@ -14,7 +14,11 @@ Widget::Widget(QWidget *parent) :
     connect(serialPort, SIGNAL(readyRead()), this, SLOT(on_serialReceive())); // 连接串口接收信号
     searchPort(); // 搜索可用串口
     
+    keyState = new uint8_t[keyStateLen]; // 创建按键状态数组
+    
     keyNum = 0;
+    memset(keyArrayAirOld, 0, sizeof(keyArrayAirOld)); // 清空按键记录
+    memset(keyArrayAir, 0, sizeof(keyArrayAir)); // 清空按键记录
     memset(keyArray, 0, sizeof(keyArray)); // 清空按键记录
     memset(keyReport, 0, sizeof(keyReport)); // 清空键盘报文
     
@@ -163,11 +167,16 @@ void Widget::on_bt_comClose_clicked() // 串口关闭
 
 void Widget::on_serialReceive() // 串口接收数据
 {
-    QString buf;
-    buf = QString(serialPort->readAll()); // 暂不做任何处理
+//    QString buf;
+//    buf = QString(serialPort->readAll()); // 暂不做任何处理
+    QByteArray BAbuf = serialPort->readAll(); // 数据读入缓冲区
+    int len = BAbuf.length(); // get length
+    uint8_t *buf = (uint8_t*)BAbuf.data(); // 提取数据
     
     if(ui->cbox_mode->currentIndex() == 2){ // 输入模式
-        
+//        printf("Len:%d, Data:", len);
+//        for(int i = 0; i < len; i++) printf("%02X,", buf[i]);
+        ComUnpack(buf, len); // 串口解包
     }
 }
 
@@ -188,7 +197,7 @@ void Widget::SendKeyReport(uint8_t *report) // 发送键盘报文
     for(int i = 0; i < 8; i++) txBuf.append(report[i]);
     txBuf.append(0xFE); // 帧尾
     
-    if(!ui->cbox_mode->currentIndex() != 1) return; // 不输出直接返回
+    if(ui->cbox_mode->currentIndex() != 1) return; // 不输出直接返回
     
     if(1){ // COM
         if(serialPort->isOpen()) serialPort->write(txBuf);
@@ -196,6 +205,108 @@ void Widget::SendKeyReport(uint8_t *report) // 发送键盘报文
     else if(0){ // HID
         
     }
+}
+
+void Widget::SendKeyState(void) // 向系统发送按键状态
+{
+    if(ui->cbox_mode->currentIndex() != 2) return; // 不输出直接返回
+    for(int i = 255; i >= 0; i--){ // 反向扫描以先处理功能键按下 测试代码
+//        if(keyArrayAir[i] && !keyArrayAirOld[i]) SendInputKey(i, 1);
+        if(keyArrayAir[i] != keyArrayAirOld[i]) SendInputKey(i, keyArrayAir[i]);
+    }
+}
+
+void Widget::ComUnpack(uint8_t *buf, int len) // 串口解包
+{
+    enum UnpackState{
+        US_WAIT_H0 = 0,
+        US_WAIT_H1,
+        US_WAIT_TYPE,
+        US_WAIT_LEN,
+        US_WAIT_DATA,
+        US_WAIT_SUM,
+        US_WAIT_END,
+    };
+    static UnpackState unpackState = US_WAIT_H0;
+    static uint16_t dataLen = 0, dataIdx = 0, tmpBufLen = 0;
+    static uint8_t pkgType = 0, dataSum = 0;
+    static uint8_t *tmpBuf = NULL;
+    while(len--){
+        uint8_t b = *buf++;
+        switch(unpackState){
+        case US_WAIT_H0:
+            if(b == 0x55) unpackState = US_WAIT_H1;
+            break;
+        case US_WAIT_H1:
+            if(b == 0xAA) unpackState = US_WAIT_TYPE;
+            else unpackState = US_WAIT_H0;
+            break;
+        case US_WAIT_TYPE:
+            pkgType = b;
+            if(b == 1) unpackState = US_WAIT_LEN; // type 1
+            else unpackState = US_WAIT_H0; // invalid type
+            break;
+        case US_WAIT_LEN:
+            unpackState = US_WAIT_DATA;
+            if(pkgType == 1) dataLen = (b + 7) / 8;
+            dataIdx = 0;
+            dataSum = 0;
+            if(dataLen > tmpBufLen){ // no enough space
+                tmpBufLen = dataLen;
+                delete tmpBuf;
+                tmpBuf = new uint8_t[tmpBufLen];
+                memset(tmpBuf, 0, tmpBufLen);
+            }
+            break;
+        case US_WAIT_DATA:
+            tmpBuf[dataIdx++] = b;
+            dataSum += b;
+            if(dataIdx >= dataLen) unpackState = US_WAIT_SUM;
+            break;
+        case US_WAIT_SUM:
+            if(b == dataSum) unpackState = US_WAIT_END; // sum correct
+            else unpackState = US_WAIT_H0;
+            break;
+        case US_WAIT_END:
+            if(b == 0x5A){ // all correct
+//                printf("Len:%d, Data:", dataLen);
+//                for(int i = 0; i < dataLen; i++) printf("%02X,", tmpBuf[i]);
+                KeyUnpack(tmpBuf, dataLen); // 按键解包
+            }
+            unpackState = US_WAIT_H0;
+            break;
+        default:
+            unpackState = US_WAIT_H0;
+            break;
+        }
+    }
+}
+
+void Widget::KeyUnpack(uint8_t *buf, int len) // 按键解包
+{
+    for(int i = 0; i < len * 8; i++){
+        keyState[i] = !!(buf[i / 8] & (1 << (i % 8)));
+    }
+    memcpy(keyArrayAirOld, keyArrayAir, sizeof(keyArrayAir));
+    memset(keyArrayAir, 0, sizeof(keyArrayAir));
+    
+//#define KDM(k)      (k)
+#define KDM(k)      (9 - (k))
+    if(keyState[KDM(0)]) keyArrayAir[kv_ctrl] = 1;
+    if(keyState[KDM(2)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'Z'] = 1;
+    if(keyState[KDM(4)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'X'] = 1;
+    if(keyState[KDM(6)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'C'] = 1;
+    if(keyState[KDM(8)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'V'] = 1;
+    
+    if(keyState[KDM(1)]) keyArrayAir[kv_shift] = 1;
+    if(keyState[KDM(3)]) keyArrayAir[kv_alt] = keyArrayAir[kv_tab] = 1;
+    if(keyState[KDM(5)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'A'] = 1;
+    if(keyState[KDM(7)]) keyArrayAir[kv_delete] = 1;
+    if(keyState[KDM(9)]) keyArrayAir[kv_backspace] = 1;
+    
+#undef KDM
+    
+    SendKeyState(); // 向系统发送按键状态
 }
 
 void Widget::on_cB_KeepOnTop_stateChanged(int arg1) // 保持最前

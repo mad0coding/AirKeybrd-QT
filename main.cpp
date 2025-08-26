@@ -10,6 +10,8 @@ int main(int argc, char *argv[])
     mywidget.show();
     mywidget.setFocusPolicy(Qt::StrongFocus);
     
+    setbuf(stdout, NULL); // 设置printf缓冲为0 以使之立即输出
+    
     a.exec();
     
     return 0;

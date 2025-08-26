@@ -17,6 +17,18 @@
 #include <QPixmap>
 #include <QDesktopWidget>
 
+
+#define kv_A            4
+#define kv_1            30
+#define kv_0            39
+#define kv_F1           58
+#define kv_NUM1         89
+#define kv_NUM0         98
+
+#define kv_backspace    42
+#define kv_tab          43
+#define kv_delete       76
+
 #define kv_report       234
 #define kv_loop         235
 #define kv_move         236
