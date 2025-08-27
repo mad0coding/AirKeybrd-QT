@@ -25,9 +25,14 @@
 #define kv_NUM1         89
 #define kv_NUM0         98
 
+#define kv_return       40
+#define kv_esc          41
 #define kv_backspace    42
 #define kv_tab          43
+#define kv_space        44
 #define kv_delete       76
+#define kv_right        79
+#define kv_left         80
 
 #define kv_report       234
 #define kv_loop         235

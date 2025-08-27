@@ -67,7 +67,8 @@ Widget::~Widget()
 
 void Widget::closeEvent(QCloseEvent *event)
 {
-    if (trayIcon->isVisible()) {
+    if(func & 0x01) return; // 按住Ctrl则直接关闭
+    if(trayIcon->isVisible()){
         trayIcon->show();
         event->ignore(); // 阻止真正退出
         hide(); // 隐藏窗口
@@ -334,17 +335,31 @@ void Widget::KeyUnpack(uint8_t *buf, int len) // 按键解包
     
 //#define KDM(k)      (k)
 #define KDM(k)      (9 - (k))
-    if(keyState[KDM(0)]) keyArrayAir[kv_ctrl] = 1;
-    if(keyState[KDM(2)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'Z'] = 1;
-    if(keyState[KDM(4)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'X'] = 1;
-    if(keyState[KDM(6)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'C'] = 1;
-    if(keyState[KDM(8)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'V'] = 1;
+    if(keyState[KDM(0)]){
+        if(keyState[KDM(1)]) keyArrayAir[kv_F1 - '1' + '2'] = 1;
+        if(keyState[KDM(3)]) keyArrayAir[kv_left] = 1;
+        if(keyState[KDM(5)]) keyArrayAir[kv_right] = 1;
+        if(keyState[KDM(7)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'A'] = 1;
+        if(keyState[KDM(9)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'F'] = 1;
+        
+        if(keyState[KDM(2)]) keyArrayAir[kv_space] = 1;
+        if(keyState[KDM(4)]) keyArrayAir[kv_shift] = keyArrayAir[kv_win] = keyArrayAir[kv_A - 'A' + 'S'] = 1;
+        if(keyState[KDM(6)]) keyArrayAir[kv_esc] = 1;
+        if(keyState[KDM(8)]) keyArrayAir[kv_return] = 1;
+    }
+    else{
+        if(keyState[KDM(1)]) keyArrayAir[kv_ctrl] = 1;
+        if(keyState[KDM(3)]) keyArrayAir[kv_alt] = keyArrayAir[kv_tab] = 1;
+        if(keyState[KDM(5)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'S'] = 1;
+        if(keyState[KDM(7)]) keyArrayAir[kv_delete] = 1;
+        if(keyState[KDM(9)]) keyArrayAir[kv_backspace] = 1;
+        
+        if(keyState[KDM(2)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'Z'] = 1;
+        if(keyState[KDM(4)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'X'] = 1;
+        if(keyState[KDM(6)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'C'] = 1;
+        if(keyState[KDM(8)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'V'] = 1;
+    }
     
-    if(keyState[KDM(1)]) keyArrayAir[kv_shift] = 1;
-    if(keyState[KDM(3)]) keyArrayAir[kv_alt] = keyArrayAir[kv_tab] = 1;
-    if(keyState[KDM(5)]) keyArrayAir[kv_ctrl] = keyArrayAir[kv_A - 'A' + 'A'] = 1;
-    if(keyState[KDM(7)]) keyArrayAir[kv_delete] = 1;
-    if(keyState[KDM(9)]) keyArrayAir[kv_backspace] = 1;
     
 #undef KDM
     
