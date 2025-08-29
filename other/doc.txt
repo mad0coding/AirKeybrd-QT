@@ -1,0 +1,42 @@
+
+
+
+
+
+通信协议：
+
+Output
+FF + 键盘包(8B) + FE
+
+Input
+55 + AA + type(1B) + len(1B) + data(len/8 B) + sum(1B) + 5A
+
+
+流式传输
+'C' + type(1B) + data + 'E'
+
+数据包传输
+'C' + type(1B) + data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

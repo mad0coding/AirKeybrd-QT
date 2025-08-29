@@ -23,7 +23,7 @@ Widget::Widget(QWidget *parent) :
     qApp->setWindowIcon(QIcon(":/AirButton.ico")); // 测试代码!!!
 //    trayIcon->setIcon(qApp->windowIcon());
     trayIcon->setIcon(QIcon(":/AirButton.ico")); // 必须加入图标
-    trayIcon->setToolTip("Keyboard-COM"); // 鼠标悬停图标时显示文本
+    trayIcon->setToolTip("AirKeybrd"); // 鼠标悬停图标时显示文本
 
     trayIcon->setContextMenu(trayMenu); // 托盘菜单设置到托盘图标
     trayIcon->show();
