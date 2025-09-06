@@ -9,6 +9,7 @@
 #include <QAction>
 #include "windows.h"
 #include "tools.h"
+#include "hidapi.h"
 
 namespace Ui {
 class Widget;
@@ -24,6 +25,8 @@ public:
     
     QStringList serialNamePort; // 串口列表
     QSerialPort *serialPort; // 串口设备
+    
+    hid_device *hidDev = NULL; // HID设备
     
     uint8_t *keyState = NULL, keyStateLen = 16;
     uint8_t keyArray[256], keyArrayAir[256], keyArrayAirOld[256]; // 按键记录
@@ -51,6 +54,11 @@ private slots:
     void on_serialReceive(); // 串口接收数据
     
     void searchPort(); // 搜索可用串口
+    
+    void on_bt_hidOpen_clicked(); // HID打开
+    void on_bt_hidClose_clicked(); // HID关闭
+    
+    uint8_t searchHid(); // 搜索可用HID
     
     void SendKeyReport(uint8_t *report); // 发送键盘报文
     void SendKeyState(void); // 向系统发送按键状态

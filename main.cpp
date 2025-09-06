@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setWindowIcon(QIcon(":/icons/AirButton.ico")); // 显式设置应用图标
     Widget mywidget;
-    mywidget.setWindowTitle("AirKeybrd V1.3"); // 设置窗口名称
+    mywidget.setWindowTitle("AirKeybrd V1.4"); // 设置窗口名称
     mywidget.show();
     mywidget.setFocusPolicy(Qt::StrongFocus);
     

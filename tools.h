@@ -16,7 +16,19 @@
 #include <QWidget>
 #include <QPixmap>
 #include <QDesktopWidget>
+#include <QInputDialog>
 
+//HID通信返回码定义
+#define CHID_OK             0
+#define CHID_NO_DEV         1
+#define CHID_MULTI_DEV      2
+#define CHID_ERR_INIT       3
+#define CHID_ERR_OPEN       4
+#define CHID_ERR_CLOSE      5
+#define CHID_ERR_WRITE      6
+#define CHID_ERR_READ       7
+#define CHID_BAD_REP        8
+#define CHID_INV_CMD        9
 
 #define kv_A            4
 #define kv_1            30

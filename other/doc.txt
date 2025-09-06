@@ -13,14 +13,17 @@ Input
 
 
 流式传输
-'C' + type(1B) + data + 'E'
+55 + type(1B) + data + AA
 
 数据包传输
-'C' + type(1B) + data
+55 + type(1B) + data
 
 
 
-
+type：
+bit7~4：dest，bit3~0：func
+dest：0xF-self，0xE-other，0x1-USB，0x2-BLE
+func：1-keybrd，2-mouse，3-point，4-vol，5-dial
 
 
 

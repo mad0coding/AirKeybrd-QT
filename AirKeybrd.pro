@@ -30,7 +30,8 @@ SOURCES += \
 
 HEADERS += \
         widget.h \
-    tools.h
+    tools.h \
+    hidapi.h
 
 FORMS += \
         widget.ui
@@ -39,11 +40,17 @@ FORMS += \
 
 #CONFIG += console
 
+LIBS += -lsetupapi # 引入该库,否则HidApi库会报错
+LIBS += $$PWD/hidapi.lib # 引入hidapi库
+
 
 RC_ICONS = AirButton.ico
 
 RESOURCES += \
     res.qrc
+
+DISTFILES += \
+    hidapi.lib
 
 
 

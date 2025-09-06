@@ -165,9 +165,6 @@ void Widget::on_bt_comOpen_clicked() // 串口打开
     serialPort->close();
     
     QSerialPort::BaudRate baudRate; // 波特率
-    QSerialPort::DataBits dataBits; // 数据位
-    QSerialPort::StopBits stopBits; // 停止位
-    QSerialPort::Parity checkBits; // 校验位
     
     if(ui->cbox_baudRate->currentText() == "4800") baudRate = QSerialPort::Baud4800;
     else if(ui->cbox_baudRate->currentText() == "9600") baudRate = QSerialPort::Baud9600;
@@ -175,15 +172,11 @@ void Widget::on_bt_comOpen_clicked() // 串口打开
     else if(ui->cbox_baudRate->currentText() == "38400") baudRate = QSerialPort::Baud38400;
     else if(ui->cbox_baudRate->currentText() == "115200") baudRate = QSerialPort::Baud115200;
     
-    dataBits = QSerialPort::Data8; // 默认8位数据
-    stopBits = QSerialPort::OneStop; // 默认1位停止位
-    checkBits = QSerialPort::NoParity; // 默认无校验
-    
     serialPort->setPortName(ui->cbox_comName->currentText());
     serialPort->setBaudRate(baudRate);
-    serialPort->setDataBits(dataBits);
-    serialPort->setStopBits(stopBits);
-    serialPort->setParity(checkBits);
+    serialPort->setDataBits(QSerialPort::Data8); // 默认8位数据
+    serialPort->setStopBits(QSerialPort::OneStop); // 默认1位停止位
+    serialPort->setParity(QSerialPort::NoParity); // 默认无校验
     
     if(serialPort->open(QIODevice::ReadWrite) == true){
         ui->bt_comOpen->setStyleSheet("color: rgb(0,200,0)"); // 打开文本变绿色
@@ -201,11 +194,6 @@ void Widget::on_bt_comClose_clicked() // 串口关闭
     serialPort->close();
     ui->bt_comOpen->setStyleSheet("color: black");
     searchPort();
-    
-//    static int tmp = 0; // 测试代码!!!
-//    if(!tmp) SendInputKey(kv_ctrl, true);
-//    else SendInputKey(kv_ctrl, false);
-//    tmp = !tmp;
 }
 
 void Widget::on_serialReceive() // 串口接收数据
@@ -233,20 +221,102 @@ void Widget::searchPort() // 搜索可用串口
     ui->cbox_comName->addItems(serialNamePort); // 列表填入控件
 }
 
+void Widget::on_bt_hidOpen_clicked() // HID打开
+{
+    on_bt_hidClose_clicked(); // HID关闭
+    uint8_t res = searchHid(); // 搜索可用HID (并打开)
+    if(res == CHID_OK) ui->bt_hidOpen->setStyleSheet("color: rgb(0,200,0)"); // 打开文本变绿色
+    else{
+        ui->bt_hidOpen->setStyleSheet("color: red");
+        hidDev = NULL;
+    }
+}
+
+void Widget::on_bt_hidClose_clicked() // HID关闭
+{
+    hid_close(hidDev); // 关闭 无返回值
+    hidDev = NULL;
+    ui->bt_hidOpen->setStyleSheet("color: black");
+}
+
+uint8_t Widget::searchHid() // 搜索可用HID
+{
+    std::vector<hid_device_info> matchVector; // 匹配设备列表
+    if(hid_init() == -1) return CHID_ERR_INIT; // HidApi未成功初始化则退出
+    hid_device_info *devInfos = hid_enumerate(ui->sb_vid->value(), ui->sb_pid->value()); // 按任意VID和PID枚举设备 得到链表
+    hid_device_info *devInfo = NULL; // 用来存储选中的设备信息
+    
+    int findDevNum = 0; // 设备计数
+    for(hid_device_info *iter = devInfos; iter; iter = iter->next){ // 在VID和PID符合的设备中进一步查找
+        if(iter->usage_page >= ui->sb_usepageMin->value() 
+        && iter->usage_page <= ui->sb_usepageMax->value()){ // 匹配UsagePage 实际主要是为了匹配端点
+            findDevNum++; // 设备计数
+            devInfo = iter; // 选定该设备信息
+            matchVector.push_back(*iter); // 加入匹配列表
+        }
+    }
+
+    if(findDevNum == 0) return CHID_NO_DEV;//未找到设备则退出
+    if(findDevNum > 1 || 1){ // 若有多个设备 (暂时不管设备数量)
+        bool ok = true;
+        QStringList items; // 序列号字符串列表
+        for(uint32_t i = 0; i < matchVector.size(); i++){
+            QString serialStr = "";
+            serialStr += QString::asprintf("%04X", matchVector[i].vendor_id) + " ";
+            serialStr += QString::asprintf("%04X", matchVector[i].product_id) + " ";
+            serialStr += QString::asprintf("%04X", matchVector[i].usage_page) + " ";
+            serialStr += QString::fromWCharArray(matchVector[i].product_string) + " ";
+            serialStr += QString::fromWCharArray(matchVector[i].serial_number);
+            items.append(serialStr); // 填入
+            // 序列号合法性检查
+//            bool valid;
+//            uint64_t sn = serialStr.toULongLong(&valid, 16); // 序列号转数字
+//            if(serialStr.length() != 12 || !valid || sn > 0xFFFFFFFFFFFFULL) ok = false; // 记录有错误序列号
+        }
+        QString ifSnErr = "Device Info:";
+        ifSnErr += "\nVID PID UPage Product SN";
+//        if(!ok) ifSnErr += "\n(疑似有错误序列号 建议取消后重试)";
+        QString item = QInputDialog::getItem(NULL, "Select Device", ifSnErr, items, 0, false, &ok);
+
+        if(!ok) return CHID_MULTI_DEV; // 退出
+        else{ // 选择了一个
+            for(uint32_t i = 0; i < matchVector.size(); i++){ // 查找选中了哪个
+                if(item == items[i]) devInfo = &matchVector[i]; // 选定该设备
+            }
+        }
+    }
+    
+//    bool openRes = HID_API_Open(devInfo->path); // 打开设备
+    hidDev = hid_open_path(devInfo->path); // 打开设备 返回句柄
+    
+    hid_free_enumeration(devInfos); // 释放链表空间
+    
+//    if(!openRes) return CHID_ERR_OPEN; // HID设备打开失败则退出
+    if(!hidDev) return CHID_ERR_OPEN; // HID设备打开失败则退出
+    return CHID_OK;
+}
+
 void Widget::SendKeyReport(uint8_t *report) // 发送键盘报文
 {
     QByteArray txBuf = "";
-    txBuf.append(0xFF); // 帧头
-    for(int i = 0; i < 8; i++) txBuf.append(report[i]);
-    txBuf.append(0xFE); // 帧尾
+//    txBuf.append(0x55); // 帧头
+//    txBuf.append(0xE1); // 类型
+//    for(int i = 0; i < 8; i++) txBuf.append(report[i]);
+//    txBuf.append(0xAA); // 帧尾
     
     if(ui->cbox_mode->currentIndex() != 1) return; // 不输出直接返回
     
-    if(1){ // COM
+    if(0){ // COM
         if(serialPort->isOpen()) serialPort->write(txBuf);
     }
-    else if(0){ // HID
-        
+    else if(1){ // HID
+        if(hidDev){
+            uint8_t tmpBuf[1 + 1 + 8] = {9, 0x55, 0xE1};
+            tmpBuf[3] = report[0]; // func键
+            for(int i = 0; i < 6; i++) tmpBuf[i + 4] = report[i + 2]; // 拷贝按键
+            int res = hid_write(hidDev, tmpBuf, sizeof(tmpBuf)); // 写入
+//            return res; // 返回写入的字节数
+        }
     }
 }
 
